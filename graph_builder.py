@@ -1,27 +1,28 @@
+import networkx as nx
 from collections import defaultdict
 
-
-class Graph:
+class GraphBuilder:
     def __init__(self):
-        self.neighbors = defaultdict(set)
+        self.G = nx.Graph()
+        self.post_users = defaultdict(set)
 
-    def add_edge(self, u, v):
-        self.neighbors[u].add(v)
-        self.neighbors[v].add(u)
+    def process(self, data):
+        user = data.get("author")
+        post = data.get("link_id")
 
-    def get_neighbors(self, v):
-        return self.neighbors[v]
+        if not user or user == "[deleted]":
+            return self.G
 
+        self.post_users[post].add(user)
+        users = list(self.post_users[post])
 
-def process_post(graph, post):
-    if post.author is None:
-        return None
+        for i in range(len(users)):
+            for j in range(i + 1, len(users)):
+                u1, u2 = users[i], users[j]
 
-    news_id = f"news_{post.id}"
-    author_id = f"author_{post.author}"
-    topic_id = f"topic_{post.subreddit}"
+                if self.G.has_edge(u1, u2):
+                    self.G[u1][u2]['weight'] += 1
+                else:
+                    self.G.add_edge(u1, u2, weight=1)
 
-    graph.add_edge(news_id, author_id)
-    graph.add_edge(news_id, topic_id)
-
-    return news_id
+        return self.G
