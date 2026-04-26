@@ -1,25 +1,18 @@
-import networkx as nx
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-import numpy as np
+import networkx as nx
 
-def draw_graph(graph_obj, partitions=None):
-    G = nx.Graph()
-    for node, neighbors in graph_obj.neighbors.items():
-        for n in neighbors:
-            G.add_edge(node, n)
 
-    pos = nx.spring_layout(G, seed=42)
-    plt.figure(figsize=(12, 8))
+def draw_graph(G, clusters=None):
+    pos = nx.spring_layout(G)
 
-    if partitions:
-        colors = cm.rainbow(np.linspace(0, 1, len(partitions)))
-        for color, part in zip(colors, partitions):
-            nx.draw_networkx_nodes(G, pos, nodelist=list(part), node_color=[color]*len(part), alpha=0.7)
+    if clusters:
+        color_map = {}
+        for c, nodes in clusters.items():
+            for n in nodes:
+                color_map[n] = c
+        colors = [color_map.get(node, 0) for node in G.nodes()]
     else:
-        nx.draw_networkx_nodes(G, pos, node_size=50, alpha=0.7)
+        colors = 'blue'
 
-    nx.draw_networkx_edges(G, pos, alpha=0.3)
-    plt.title("Reddit Graph Clusters")
-    plt.axis("off")
+    nx.draw(G, pos, node_color=colors, node_size=30, with_labels=False)
     plt.show()
