@@ -1,20 +1,31 @@
-class FennelPartitioner:
-    def __init__(self, graph, num_partitions, alpha):
-        self.graph = graph
-        self.partitions = [set() for _ in range(num_partitions)]
+class FennelClustering:
+    def __init__(self, k=5, alpha=1.5):
+        self.k = k
         self.alpha = alpha
+        self.clusters = {i: set() for i in range(k)}
 
-    def connections(self, v, partition):
-        return len(self.graph.get_neighbors(v).intersection(partition))
+    def assign(self, node, G):
+        best_cluster = None
+        best_score = float('-inf')
 
-    def score(self, v, partition):
-        return self.connections(v, partition) - self.alpha * len(partition)
+        for c in range(self.k):
+            internal_edges = sum(
+                1 for neighbor in G.neighbors(node)
+                if neighbor in self.clusters[c]
+            )
 
-    def choose_partition(self, v):
-        scores = [self.score(v, p) for p in self.partitions]
-        return scores.index(max(scores))
+            size_penalty = self.alpha * len(self.clusters[c])
+            score = internal_edges - size_penalty
 
-    def assign(self, v):
-        p_idx = self.choose_partition(v)
-        self.partitions[p_idx].add(v)
-        return p_idx
+            if score > best_score:
+                best_score = score
+                best_cluster = c
+
+        self.clusters[best_cluster].add(node)
+        return best_cluster
+
+    def run(self, G):
+        for node in G.nodes():
+            if not any(node in c for c in self.clusters.values()):
+                self.assign(node, G)
+        return self.clusters
